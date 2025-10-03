@@ -58,5 +58,8 @@ process.on('uncaughtException', error => {
     process.exit(1);
 });
 
+// Start web server
+const webServer = require('./web/server');
+
 // Login to Discord
 client.login(process.env.DISCORD_TOKEN);

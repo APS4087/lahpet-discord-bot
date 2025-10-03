@@ -105,9 +105,10 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
-app.listen(PORT, () => {
-    console.log(`🌐 Web server running on http://localhost:${PORT}`);
-    console.log(`🎨 Beautiful dashboard available at http://localhost:${PORT}/dashboard`);
+// Start server when imported
+const server = app.listen(PORT, () => {
+    console.log(`🌐 Web server running on port ${PORT}`);
+    console.log(`🎨 Beautiful dashboard available at /dashboard`);
 });
 
-module.exports = app;
+module.exports = { app, server };
