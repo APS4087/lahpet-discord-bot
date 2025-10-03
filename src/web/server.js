@@ -107,11 +107,27 @@ app.get('/api/music/top', async (req, res) => {
 
 // Health check
 app.get('/health', (req, res) => {
+    // Try to get Discord status if client is available
+    let discordStatus = 'unknown';
+    try {
+        if (global.discordClient && global.discordClient.isReady()) {
+            discordStatus = 'connected';
+        } else if (global.discordClient) {
+            discordStatus = 'connecting';
+        } else {
+            discordStatus = 'not-started';
+        }
+    } catch (e) {
+        discordStatus = 'error';
+    }
+
     res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
         port: PORT,
-        env: process.env.NODE_ENV
+        env: process.env.NODE_ENV,
+        discord: discordStatus,
+        webServer: 'running'
     });
 });
 
