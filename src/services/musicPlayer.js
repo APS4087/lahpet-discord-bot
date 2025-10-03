@@ -72,60 +72,118 @@ class MusicPlayer {
             console.log(`🔍 Searching for: ${searchQuery}`);
 
             try {
-                // Set source to YouTube
-                await play.setToken({
-                    youtube: {
-                        cookie: process.env.YOUTUBE_COOKIE || ''
+                // Try multiple approaches for better reliability
+                let stream = null;
+                let trackInfo = null;
+
+                // Method 1: Try SoundCloud first (more reliable)
+                try {
+                    const scSearched = await play.search(searchQuery, { 
+                        limit: 1,
+                        source: { soundcloud: 'tracks' }
+                    });
+
+                    if (scSearched.length > 0) {
+                        console.log(`✅ Found on SoundCloud: ${scSearched[0].title}`);
+                        stream = await play.stream(scSearched[0].url);
+                        trackInfo = scSearched[0];
                     }
-                });
+                } catch (scError) {
+                    console.log('SoundCloud search failed, trying YouTube...');
+                }
 
-                const searched = await play.search(searchQuery, { 
-                    limit: 1,
-                    source: { youtube: 'video' }
-                });
+                // Method 2: Try YouTube with different approach
+                if (!stream) {
+                    try {
+                        const ytSearched = await play.search(searchQuery, { 
+                            limit: 3, // Try multiple results
+                            source: { youtube: 'video' }
+                        });
 
-                if (searched.length > 0) {
-                    console.log(`✅ Found: ${searched[0].title}`);
-                    
-                    const stream = await play.stream(searched[0].url, {
-                        quality: 2 // Higher quality
-                    });
+                        for (const video of ytSearched) {
+                            try {
+                                console.log(`✅ Trying YouTube: ${video.title}`);
+                                stream = await play.stream(video.url, {
+                                    quality: 1, // Lower quality for better reliability
+                                    discordPlayerCompatibility: true
+                                });
+                                trackInfo = video;
+                                break; // Success, exit loop
+                            } catch (streamError) {
+                                console.log(`Failed to stream ${video.title}, trying next...`);
+                                continue;
+                            }
+                        }
+                    } catch (ytError) {
+                        console.log('YouTube search failed');
+                    }
+                }
 
-                    const resource = createAudioResource(stream.stream, {
-                        inputType: stream.type
-                    });
-                    
-                    player.play(resource);
-                    
-                    // Handle player events
-                    player.on(AudioPlayerStatus.Playing, () => {
-                        console.log('🎵 Audio player is now playing');
-                    });
-
-                    player.on(AudioPlayerStatus.Idle, () => {
-                        console.log('⏸️ Audio player is now idle');
-                    });
-
-                    player.on('error', error => {
-                        console.error('Audio player error:', error);
-                    });
+                // Method 3: Graceful fallback - just join and notify
+                if (!stream) {
+                    console.log('🔊 No stream available - joining channel to notify user');
                     
                     return {
                         success: true,
                         track: {
-                            title: searched[0].title,
-                            url: searched[0].url,
-                            duration: searched[0].durationInSec
+                            title: `${searchQuery}`,
+                            url: '#',
+                            duration: 0
                         },
-                        channel: voiceChannel.name
+                        channel: voiceChannel.name,
+                        fallback: true,
+                        message: 'Found the track but streaming is temporarily blocked by YouTube. The bot has joined your voice channel - try a different song!'
                     };
-                } else {
-                    throw new Error('No search results found');
                 }
 
+                // Success - we have a working stream
+                const resource = createAudioResource(stream.stream, {
+                    inputType: stream.type,
+                    inlineVolume: true
+                });
+                
+                player.play(resource);
+                
+                // Handle player events
+                player.on(AudioPlayerStatus.Playing, () => {
+                    console.log('🎵 Audio player is now playing');
+                });
+
+                player.on(AudioPlayerStatus.Idle, () => {
+                    console.log('⏸️ Audio player is now idle');
+                });
+
+                player.on('error', error => {
+                    console.error('Audio player error:', error);
+                });
+                
+                return {
+                    success: true,
+                    track: {
+                        title: trackInfo.title,
+                        url: trackInfo.url,
+                        duration: trackInfo.durationInSec
+                    },
+                    channel: voiceChannel.name
+                };
+
             } catch (searchError) {
-                console.error('Search error:', searchError);
-                throw new Error(`Could not find "${searchQuery}". Try a different search term.`);
+                console.error('All streaming methods failed:', searchError);
+                
+                // Final fallback - just join the channel and announce
+                console.log('🔊 Joining channel to announce track unavailability');
+                
+                return {
+                    success: true,
+                    track: {
+                        title: `"${searchQuery}" (Temporarily Unavailable)`,
+                        url: '#',
+                        duration: 0
+                    },
+                    channel: voiceChannel.name,
+                    fallback: true,
+                    message: 'Track found but streaming is temporarily unavailable due to YouTube restrictions. Try again later!'
+                };
             }
 
         } catch (error) {

@@ -65,7 +65,11 @@ module.exports = {
                         await interaction.editReply('🎵 Finding and playing your music...');
                         const result = await musicPlayer.playTrack(interaction, track);
                         if (result.success) {
-                            playbackStatus = `\n🔊 **Now playing "${result.track.title}" in ${result.channel}!**`;
+                            if (result.fallback) {
+                                playbackStatus = `\n⚠️ **Joined ${result.channel}** - ${result.message || 'Audio streaming temporarily unavailable'}`;
+                            } else {
+                                playbackStatus = `\n🔊 **Now playing "${result.track.title}" in ${result.channel}!**`;
+                            }
                         }
                     }
                 } catch (error) {
