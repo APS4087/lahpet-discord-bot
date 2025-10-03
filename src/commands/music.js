@@ -65,7 +65,7 @@ module.exports = {
                         await interaction.editReply('🎵 Finding and playing your music...');
                         const result = await musicPlayer.playTrack(interaction, track);
                         if (result.success) {
-                            playbackStatus = `\n🔊 **Now playing in ${result.channel}!**`;
+                            playbackStatus = `\n🔊 **Now playing "${result.track.title}" in ${result.channel}!**`;
                         }
                     }
                 } catch (error) {

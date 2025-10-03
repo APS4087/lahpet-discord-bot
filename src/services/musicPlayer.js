@@ -6,6 +6,7 @@ const {
     VoiceConnectionStatus,
     getVoiceConnection
 } = require('@discordjs/voice');
+const { PermissionFlagsBits } = require('discord.js');
 const play = require('play-dl');
 const ytdl = require('ytdl-core');
 
@@ -25,7 +26,7 @@ class MusicPlayer {
         }
 
         const permissions = voiceChannel.permissionsFor(interaction.client.user);
-        if (!permissions.has('CONNECT') || !permissions.has('SPEAK')) {
+        if (!permissions.has(PermissionFlagsBits.Connect) || !permissions.has(PermissionFlagsBits.Speak)) {
             throw new Error('I need permissions to join and speak in your voice channel!');
         }
 
@@ -48,57 +49,67 @@ class MusicPlayer {
         try {
             const { player, voiceChannel } = await this.joinChannel(interaction);
 
-            // Search for the track on YouTube
+            // Search for the track on YouTube using play-dl
             const searchQuery = `${track.name} ${track.artists?.[0]?.name || ''}`;
-            let audioUrl = null;
+            
+            console.log(`🔍 Searching for: ${searchQuery}`);
 
             try {
-                // Try using play-dl first
-                const searched = await play.search(searchQuery, { limit: 1 });
+                // Set source to YouTube
+                await play.setToken({
+                    youtube: {
+                        cookie: process.env.YOUTUBE_COOKIE || ''
+                    }
+                });
+
+                const searched = await play.search(searchQuery, { 
+                    limit: 1,
+                    source: { youtube: 'video' }
+                });
+
                 if (searched.length > 0) {
-                    const stream = await play.stream(searched[0].url);
+                    console.log(`✅ Found: ${searched[0].title}`);
+                    
+                    const stream = await play.stream(searched[0].url, {
+                        quality: 2 // Higher quality
+                    });
+
                     const resource = createAudioResource(stream.stream, {
                         inputType: stream.type
                     });
                     
                     player.play(resource);
                     
-                    return {
-                        success: true,
-                        track: searched[0],
-                        channel: voiceChannel.name
-                    };
-                }
-            } catch (error) {
-                console.log('Play-dl failed, trying ytdl-core...');
-            }
-
-            // Fallback to ytdl-core
-            try {
-                const searchResults = await ytdl.getInfo(`ytsearch:${searchQuery}`);
-                if (searchResults) {
-                    const stream = ytdl(searchResults.videoDetails.video_url, {
-                        filter: 'audioonly',
-                        quality: 'highestaudio',
+                    // Handle player events
+                    player.on(AudioPlayerStatus.Playing, () => {
+                        console.log('🎵 Audio player is now playing');
                     });
 
-                    const resource = createAudioResource(stream);
-                    player.play(resource);
+                    player.on(AudioPlayerStatus.Idle, () => {
+                        console.log('⏸️ Audio player is now idle');
+                    });
 
+                    player.on('error', error => {
+                        console.error('Audio player error:', error);
+                    });
+                    
                     return {
                         success: true,
                         track: {
-                            title: searchResults.videoDetails.title,
-                            url: searchResults.videoDetails.video_url
+                            title: searched[0].title,
+                            url: searched[0].url,
+                            duration: searched[0].durationInSec
                         },
                         channel: voiceChannel.name
                     };
+                } else {
+                    throw new Error('No search results found');
                 }
-            } catch (error) {
-                console.log('YTDL-core also failed');
-            }
 
-            throw new Error('Could not find or play this track');
+            } catch (searchError) {
+                console.error('Search error:', searchError);
+                throw new Error(`Could not find "${searchQuery}". Try a different search term.`);
+            }
 
         } catch (error) {
             console.error('Music player error:', error);
