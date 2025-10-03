@@ -26,7 +26,7 @@ module.exports = {
                     type: 2,
                     style: 5,
                     label: '🚀 Open Dashboard',
-                    url: process.env.WEB_URL || `http://localhost:3000/dashboard?user=${interaction.user.id}&username=${encodeURIComponent(interaction.user.username)}`
+                    url: process.env.WEB_URL || `https://lahpet-discord-bot.onrender.com/dashboard?user=${interaction.user.id}&username=${encodeURIComponent(interaction.user.username)}`
                 }]
             }],
             ephemeral: true

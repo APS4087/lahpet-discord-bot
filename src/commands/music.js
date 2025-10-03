@@ -77,7 +77,7 @@ module.exports = {
                             type: 2,
                             style: 5,
                             label: 'View More Recommendations',
-                            url: process.env.WEB_URL || `http://localhost:3000/dashboard?user=${interaction.user.id}`
+                            url: process.env.WEB_URL || `https://lahpet-discord-bot.onrender.com/dashboard?user=${interaction.user.id}`
                         }
                     ]
                 });
