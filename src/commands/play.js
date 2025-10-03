@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const musicPlayer = require('../services/musicPlayer');
+const musicPlayer = require('../services/reliableMusicPlayer');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -47,14 +47,23 @@ module.exports = {
                     const result = await musicPlayer.playTrack(interaction, mockTrack);
                     
                     if (result.success) {
-                        const embed = new EmbedBuilder()
-                            .setTitle(`🎵 Now Playing`)
-                            .setDescription(`**${result.track.title || query}**\n🔊 Playing in **${result.channel}**`)
-                            .setColor(0x4ECDC4)
-                            .setFooter({ text: '🎯 Use /play stop to stop playback' })
-                            .setTimestamp();
+                        if (result.fallback) {
+                            await interaction.editReply(`⚠️ **Joined ${result.channel}** - ${result.message}`);
+                        } else {
+                            const sourceInfo = result.track.source ? ` via ${result.track.source}` : '';
+                            const embed = new EmbedBuilder()
+                                .setTitle(`🎵 Now Playing`)
+                                .setDescription(`**${result.track.title || query}**\n🔊 Playing in **${result.channel}**${sourceInfo}`)
+                                .setColor(0x4ECDC4)
+                                .addFields(
+                                    { name: '📱 Source', value: result.track.source || 'Unknown', inline: true },
+                                    { name: '⏱️ Duration', value: result.track.duration ? `${Math.floor(result.track.duration / 60)}:${String(result.track.duration % 60).padStart(2, '0')}` : 'Unknown', inline: true }
+                                )
+                                .setFooter({ text: '🎯 Use /play stop to stop playback' })
+                                .setTimestamp();
 
-                        await interaction.editReply({ embeds: [embed] });
+                            await interaction.editReply({ embeds: [embed] });
+                        }
                     } else {
                         await interaction.editReply('❌ Could not find or play that song. Try a different search term.');
                     }

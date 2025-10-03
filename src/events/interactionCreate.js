@@ -1,5 +1,5 @@
 const { Events } = require('discord.js');
-const musicPlayer = require('../services/musicPlayer');
+const musicPlayer = require('../services/reliableMusicPlayer');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -48,7 +48,7 @@ async function handleButtonInteraction(interaction) {
             if (interaction.user.id !== userId) {
                 return await interaction.reply({
                     content: '❌ Only the person who requested this music can play it!',
-                    ephemeral: true
+                    flags: 64 // Ephemeral flag
                 });
             }
 
@@ -56,11 +56,11 @@ async function handleButtonInteraction(interaction) {
             if (!member.voice.channel) {
                 return await interaction.reply({
                     content: '❌ You need to be in a voice channel to play music!',
-                    ephemeral: true
+                    flags: 64 // Ephemeral flag
                 });
             }
 
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: 64 }); // Ephemeral flag
 
             // Extract track info from the embed
             const embed = interaction.message.embeds[0];
@@ -81,7 +81,7 @@ async function handleButtonInteraction(interaction) {
             }
 
         } else if (customId.startsWith('stop_music_')) {
-            await interaction.deferReply({ ephemeral: true });
+            await interaction.deferReply({ flags: 64 }); // Ephemeral flag
             
             await musicPlayer.stop(interaction.guild.id);
             await interaction.editReply('⏹️ **Stopped music and left voice channel.**');
@@ -92,7 +92,7 @@ async function handleButtonInteraction(interaction) {
         
         const errorMessage = {
             content: `❌ **Error:** ${error.message}`,
-            ephemeral: true
+            flags: 64 // Ephemeral flag
         };
 
         if (interaction.deferred) {

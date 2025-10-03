@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getMusicRecommendations } = require('../services/musicService');
-const musicPlayer = require('../services/musicPlayer');
+const musicPlayer = require('../services/reliableMusicPlayer');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -68,7 +68,8 @@ module.exports = {
                             if (result.fallback) {
                                 playbackStatus = `\n⚠️ **Joined ${result.channel}** - ${result.message || 'Audio streaming temporarily unavailable'}`;
                             } else {
-                                playbackStatus = `\n🔊 **Now playing "${result.track.title}" in ${result.channel}!**`;
+                                const sourceInfo = result.track.source ? ` (via ${result.track.source})` : '';
+                                playbackStatus = `\n🔊 **Now playing "${result.track.title}" in ${result.channel}!**${sourceInfo}`;
                             }
                         }
                     }
