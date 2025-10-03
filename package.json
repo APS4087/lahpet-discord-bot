@@ -5,6 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/start.js",
+    "start:direct": "node src/index.js",
+    "start:web": "node src/web/server.js",
     "dev": "nodemon src/start.js",
     "web": "node src/web/server.js",
     "dev:web": "nodemon src/web/server.js",
