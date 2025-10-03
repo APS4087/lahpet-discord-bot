@@ -83,10 +83,15 @@ process.on('uncaughtException', error => {
     }
 });
 
-// Start web server (this should always work)
-console.log('🌐 Starting web server...');
-const webServer = require('./web/server');
-console.log('✅ Web server started successfully');
+// Start web server only if not already started
+if (!global.webServerStarted) {
+    console.log('🌐 Starting web server...');
+    const webServer = require('./web/server');
+    console.log('✅ Web server started successfully');
+    global.webServerStarted = true;
+} else {
+    console.log('✅ Web server already running, Discord bot connecting...');
+}
 
 // Login to Discord with retry logic
 if (!process.env.DISCORD_TOKEN) {

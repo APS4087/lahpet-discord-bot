@@ -147,10 +147,24 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Start server when imported
+// Start server and optionally Discord bot
+global.webServerStarted = true;
 const server = app.listen(PORT, () => {
     console.log(`🌐 Web server running on port ${PORT}`);
     console.log(`🎨 Beautiful dashboard available at /dashboard`);
+    
+    // Try to start Discord bot if environment variables exist
+    if (process.env.DISCORD_TOKEN && process.env.DISCORD_CLIENT_ID) {
+        console.log('🤖 Discord environment detected, starting bot...');
+        try {
+            require('../index.js');
+        } catch (error) {
+            console.error('❌ Failed to start Discord bot:', error.message);
+            console.log('🌐 Continuing with web server only...');
+        }
+    } else {
+        console.log('ℹ️ Discord environment not configured, running web server only');
+    }
 });
 
 module.exports = { app, server };
