@@ -7,7 +7,8 @@ const path = require('path');
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildVoiceStates
     ],
     rest: {
         timeout: 30000, // 30 seconds timeout
