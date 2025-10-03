@@ -9,6 +9,6 @@ module.exports = {
         console.log(`👥 Connected to ${client.users.cache.size} users`);
         
         // Set bot status
-        client.user.setActivity('🎬 Recommending movies & music', { type: 'PLAYING' });
+        client.user.setActivity('🎬 Recommending movies & music', { type: 0 }); // 0 = Playing
     },
 };
