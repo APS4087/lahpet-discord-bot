@@ -34,10 +34,27 @@ class MusicPlayer {
             channelId: voiceChannel.id,
             guildId: interaction.guild.id,
             adapterCreator: interaction.guild.voiceAdapterCreator,
+            selfDeaf: true,
+            selfMute: false,
         });
 
         const player = createAudioPlayer();
         connection.subscribe(player);
+
+        // Handle connection events
+        connection.on(VoiceConnectionStatus.Ready, () => {
+            console.log('🔊 Voice connection is ready!');
+        });
+
+        connection.on(VoiceConnectionStatus.Disconnected, async () => {
+            console.log('🔌 Voice connection disconnected');
+            this.connections.delete(interaction.guild.id);
+            this.players.delete(interaction.guild.id);
+        });
+
+        connection.on('error', error => {
+            console.error('Voice connection error:', error);
+        });
 
         this.connections.set(interaction.guild.id, connection);
         this.players.set(interaction.guild.id, player);
