@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const { getMovieRecommendations, getPopularMovies } = require('../services/movieService');
 const { getMusicRecommendations, getTopTracks } = require('../services/musicService');
 
@@ -23,13 +22,30 @@ app.use(helmet({
     }
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again later.'
-});
-app.use(limiter);
+// Basic rate limiting (simplified for deployment)
+const requestCounts = new Map();
+const rateLimit = (req, res, next) => {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    const windowMs = 15 * 60 * 1000; // 15 minutes
+    
+    if (!requestCounts.has(ip)) {
+        requestCounts.set(ip, { count: 1, resetTime: now + windowMs });
+    } else {
+        const data = requestCounts.get(ip);
+        if (now > data.resetTime) {
+            data.count = 1;
+            data.resetTime = now + windowMs;
+        } else {
+            data.count++;
+            if (data.count > 100) {
+                return res.status(429).json({ error: 'Too many requests' });
+            }
+        }
+    }
+    next();
+};
+app.use(rateLimit);
 
 app.use(cors());
 app.use(express.json());
