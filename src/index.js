@@ -61,5 +61,13 @@ process.on('uncaughtException', error => {
 // Start web server
 const webServer = require('./web/server');
 
-// Login to Discord
-client.login(process.env.DISCORD_TOKEN);
+// Login to Discord with error handling
+if (!process.env.DISCORD_TOKEN) {
+    console.error('❌ DISCORD_TOKEN is required!');
+    process.exit(1);
+}
+
+client.login(process.env.DISCORD_TOKEN).catch(error => {
+    console.error('❌ Failed to login to Discord:', error);
+    process.exit(1);
+});
